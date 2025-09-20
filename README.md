@@ -158,6 +158,8 @@ firebase_auth_python_console/
 ├── requirements.txt       # Python dependencies
 ├── README.md             # This file
 ├── .gitignore            # Git ignore rules
+├── assets/               # Screenshots and images
+│   └── screenshot_3x_postspark_2025-09-20_21-58-18.png
 ├── venv/                 # Virtual environment (created by setup.sh)
 └── config/               # Configuration folder (ignored by Git)
     └── firebase-admin-key.json  # Your Firebase admin key
