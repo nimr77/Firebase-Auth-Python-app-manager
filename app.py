@@ -40,15 +40,46 @@ def validate_firebase_json(json_path: str) -> bool:
         return False
 
 
+def show_readme(console: Console):
+    """Display README documentation."""
+    readme_path = "README.md"
+    
+    if not os.path.exists(readme_path):
+        console.print("[red]❌ README.md not found![/red]")
+        return
+    
+    try:
+        with open(readme_path, 'r', encoding='utf-8') as f:
+            readme_content = f.read()
+        
+        # Display README in a panel
+        readme_panel = Panel(
+            readme_content,
+            title="📖 Firebase Admin Console - Documentation",
+            box=box.DOUBLE,
+            style="blue"
+        )
+        console.print(readme_panel)
+        
+    except Exception as e:
+        console.print(f"[red]❌ Error reading README: {str(e)}[/red]")
+
+
 @click.command()
 @click.argument('admin_json_path', type=click.Path(exists=True))
-def main(admin_json_path: str):
+@click.option('--readme', is_flag=True, help='Show README documentation and exit')
+def main(admin_json_path: str, readme: bool):
     """
     Firebase Admin Console - User Management System
     
     ADMIN_JSON_PATH: Path to your Firebase admin service account JSON file
     """
     console = Console()
+    
+    # Show README if requested
+    if readme:
+        show_readme(console)
+        return
     
     # Display welcome message
     welcome_text = Text("🔥 Firebase Admin Console", style="bold blue")

@@ -18,6 +18,48 @@ VENV_DIR="venv"
 CONFIG_DIR="config"
 REQUIREMENTS_FILE="requirements.txt"
 
+# Function to show README
+show_readme() {
+    echo "📖 Firebase Admin Console - README"
+    echo "=================================="
+    echo
+    
+    if [ -f "README.md" ]; then
+        # Show first part of README (features and quick start)
+        head -50 README.md | sed 's/^# /## /' | sed 's/^## /### /'
+        echo
+        echo "[Press Enter to continue or 'q' to quit]"
+        read -r response
+        if [ "$response" = "q" ] || [ "$response" = "Q" ]; then
+            echo "Setup cancelled."
+            exit 0
+        fi
+    else
+        echo "README.md not found. Proceeding with setup..."
+    fi
+}
+
+# Function to show app information
+show_app_info() {
+    echo "🔥 Firebase Admin Console"
+    echo "========================="
+    echo
+    echo "This application provides:"
+    echo "• 🔍 User search and management"
+    echo "• 🔑 Password reset functionality"
+    echo "• 👤 Display name updates"
+    echo "• 🧪 Token generation (custom & login test)"
+    echo "• 📋 Full UID display with copy instructions"
+    echo "• 🎨 Beautiful terminal interface"
+    echo
+    echo "Setup will:"
+    echo "• Create virtual environment"
+    echo "• Install dependencies"
+    echo "• Validate Firebase configuration"
+    echo "• Launch the application"
+    echo
+}
+
 # Function to print colored output
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -207,22 +249,20 @@ show_help() {
     echo "  --setup-only        Only setup environment, don't run the app"
     echo "  --run-only          Skip setup and run the app directly"
     echo "  --recreate-venv     Force recreate virtual environment"
+    echo "  --readme            Show README documentation and exit"
     echo
     echo "This script will:"
-    echo "  1. Check Python version compatibility"
-    echo "  2. Create/activate virtual environment"
-    echo "  3. Install dependencies"
-    echo "  4. Check/validate Firebase configuration"
-    echo "  5. Run the Firebase Admin Console"
+    echo "  1. Show app information and optional README"
+    echo "  2. Check Python version compatibility"
+    echo "  3. Create/activate virtual environment"
+    echo "  4. Install dependencies"
+    echo "  5. Check/validate Firebase configuration"
+    echo "  6. Run the Firebase Admin Console"
 }
 
 # Main function
 main() {
-    echo "🔥 Firebase Admin Console - Setup Script"
-    echo "========================================"
-    echo
-    
-    # Parse command line arguments
+    # Parse command line arguments first
     SETUP_ONLY=false
     RUN_ONLY=false
     RECREATE_VENV=false
@@ -245,6 +285,10 @@ main() {
                 RECREATE_VENV=true
                 shift
                 ;;
+            --readme)
+                show_readme
+                exit 0
+                ;;
             *)
                 print_error "Unknown option: $1"
                 show_help
@@ -252,6 +296,21 @@ main() {
                 ;;
         esac
     done
+    
+    # Show app information
+    show_app_info
+    
+    # Ask if user wants to see README
+    echo "Would you like to see the README documentation?"
+    read -p "Press Enter to view README, or 'n' to skip: " -r response
+    
+    if [ "$response" != "n" ] && [ "$response" != "N" ]; then
+        show_readme
+    fi
+    
+    echo "🔥 Firebase Admin Console - Setup Script"
+    echo "========================================"
+    echo
     
     # Skip setup if run-only mode
     if [ "$RUN_ONLY" = false ]; then
