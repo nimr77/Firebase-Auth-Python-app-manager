@@ -64,7 +64,17 @@ class FirebaseAdminCLI:
         
         self.console.print(table)
         self.console.print(f"\n[dim]Total users: {len(users)}[/dim]")
-        self.console.print("[dim]💡 Tip: UIDs are displayed in full - you can select and copy them directly from the table above[/dim]")
+        
+        # Show copy instructions after table
+        copy_instructions = Panel(
+            """
+[bold yellow]📋 To copy the UID:[/bold yellow]
+[dim]Select the UID text above and copy it (Cmd+C on Mac, Ctrl+C on Windows/Linux)[/dim]
+            """,
+            box=box.ROUNDED,
+            style="yellow"
+        )
+        self.console.print(copy_instructions)
     
     def load_users(self):
         """Load all users from Firebase."""
