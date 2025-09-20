@@ -44,8 +44,8 @@ class FirebaseAdminCLI:
             return
         
         table = Table(title=title, box=box.ROUNDED)
-        table.add_column("UID", style="cyan", width=20)
-        table.add_column("Email", style="green", width=30)
+        table.add_column("UID", style="bold cyan", width=50)  # Bold and increased width for full UID
+        table.add_column("Email", style="green", width=35)
         table.add_column("Display Name", style="magenta", width=25)
         table.add_column("Verified", style="yellow", width=10)
         table.add_column("Status", style="red", width=10)
@@ -55,8 +55,8 @@ class FirebaseAdminCLI:
             account_status = "🔒 Disabled" if user['disabled'] else "✅ Active"
             
             table.add_row(
-                user['uid'][:20] + "..." if len(user['uid']) > 20 else user['uid'],
-                user['email'][:30] + "..." if len(user['email']) > 30 else user['email'],
+                user['uid'],  # Show full UID without truncation
+                user['email'][:35] + "..." if len(user['email']) > 35 else user['email'],
                 user['display_name'][:25] + "..." if len(user['display_name']) > 25 else user['display_name'],
                 verified_status,
                 account_status
@@ -64,6 +64,7 @@ class FirebaseAdminCLI:
         
         self.console.print(table)
         self.console.print(f"\n[dim]Total users: {len(users)}[/dim]")
+        self.console.print("[dim]💡 Tip: UIDs are displayed in full - you can select and copy them directly from the table above[/dim]")
     
     def load_users(self):
         """Load all users from Firebase."""
@@ -107,6 +108,20 @@ class FirebaseAdminCLI:
             style="blue"
         )
         self.console.print(details_panel)
+        
+        # Show copy instructions
+        copy_panel = Panel(
+            f"""
+[bold yellow]📋 To copy the UID:[/bold yellow]
+[dim]Select the UID text above and copy it (Cmd+C on Mac, Ctrl+C on Windows/Linux)[/dim]
+
+[bold cyan]UID:[/bold cyan] {user['uid']}
+            """,
+            title="Copy Instructions",
+            box=box.ROUNDED,
+            style="yellow"
+        )
+        self.console.print(copy_panel)
     
     def update_user_password(self):
         """Update user password."""
@@ -169,16 +184,36 @@ class FirebaseAdminCLI:
         else:
             self.console.print("[red]❌ Failed to update display name![/red]")
     
+    def view_user_details(self):
+        """View detailed information about a specific user."""
+        uid = Prompt.ask("\n[cyan]Enter user UID")
+        
+        # Find user
+        user = None
+        for u in self.users:
+            if u['uid'] == uid:
+                user = u
+                break
+        
+        if not user:
+            self.console.print("[red]❌ User not found![/red]")
+            return
+        
+        self.clear_screen()
+        self.display_header()
+        self.show_user_details(user)
+    
     def show_main_menu(self):
         """Display the main menu."""
         menu_panel = Panel(
             """
 [bold cyan]1.[/bold cyan] 🔍 Search Users
 [bold cyan]2.[/bold cyan] 🔄 Refresh Users
-[bold cyan]3.[/bold cyan] 🔑 Update User Password
-[bold cyan]4.[/bold cyan] 👤 Update User Display Name
-[bold cyan]5.[/bold cyan] 📋 Show All Users
-[bold cyan]6.[/bold cyan] ❌ Exit
+[bold cyan]3.[/bold cyan] 👁️  View User Details (with full UID)
+[bold cyan]4.[/bold cyan] 🔑 Update User Password
+[bold cyan]5.[/bold cyan] 👤 Update User Display Name
+[bold cyan]6.[/bold cyan] 📋 Show All Users
+[bold cyan]7.[/bold cyan] ❌ Exit
             """,
             title="Main Menu",
             box=box.ROUNDED,
@@ -205,7 +240,7 @@ class FirebaseAdminCLI:
             
             choice = Prompt.ask(
                 "\n[bold cyan]Select an option",
-                choices=["1", "2", "3", "4", "5", "6"],
+                choices=["1", "2", "3", "4", "5", "6", "7"],
                 default="1"
             )
             
@@ -214,17 +249,19 @@ class FirebaseAdminCLI:
             elif choice == "2":
                 self.load_users()
             elif choice == "3":
-                self.update_user_password()
+                self.view_user_details()
             elif choice == "4":
-                self.update_user_name()
+                self.update_user_password()
             elif choice == "5":
+                self.update_user_name()
+            elif choice == "6":
                 self.filtered_users = self.users.copy()
                 self.clear_screen()
                 self.display_header()
                 self.display_users_table(self.filtered_users)
-            elif choice == "6":
+            elif choice == "7":
                 self.console.print("\n[green]👋 Goodbye![/green]")
                 break
             
-            if choice != "6":
+            if choice != "7":
                 Prompt.ask("\n[dim]Press Enter to continue...[/dim]")
