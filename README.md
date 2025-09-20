@@ -13,18 +13,49 @@ A beautiful CLI application for managing Firebase users with a modern terminal i
 
 ## Quick Start
 
-### 1. Clone the Repository
+### 🚀 Automated Setup (Recommended)
+
+The easiest way to get started is using our setup script:
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd firebase_auth_python_console
+
+# Run the setup script (handles everything automatically)
+./setup.sh
+```
+
+The setup script will:
+- ✅ Check Python version compatibility
+- ✅ Create and activate virtual environment
+- ✅ Install all dependencies (fixes externally-managed-environment error)
+- ✅ Guide you through Firebase configuration
+- ✅ Validate your Firebase admin key
+- ✅ Launch the application
+
+### 📋 Manual Setup
+
+If you prefer manual setup:
+
+#### 1. Clone the Repository
 ```bash
 git clone <your-repo-url>
 cd firebase_auth_python_console
 ```
 
-### 2. Install Dependencies
+#### 2. Create Virtual Environment
+```bash
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+#### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Setup Firebase Admin Key
+#### 4. Setup Firebase Admin Key
 ```bash
 # Create a config directory for your Firebase admin key
 mkdir config
@@ -32,7 +63,7 @@ mkdir config
 mv your-firebase-admin-key.json config/firebase-admin-key.json
 ```
 
-### 4. Run the Application
+#### 5. Run the Application
 ```bash
 python app.py config/firebase-admin-key.json
 ```
@@ -103,9 +134,11 @@ firebase_auth_python_console/
 ├── firebase_service.py    # Firebase service layer
 ├── cli_interface.py       # Terminal UI interface
 ├── example.py             # Example usage script
+├── setup.sh               # Automated setup script
 ├── requirements.txt       # Python dependencies
 ├── README.md             # This file
 ├── .gitignore            # Git ignore rules
+├── venv/                 # Virtual environment (created by setup.sh)
 └── config/               # Configuration folder (ignored by Git)
     └── firebase-admin-key.json  # Your Firebase admin key
 ```
@@ -117,28 +150,37 @@ firebase_auth_python_console/
 - The application handles password input securely (hidden input)
 - The `config/` folder is automatically ignored by Git
 
-## Troubleshooting
+## Setup Script Options
 
-### Common Issues
+The `setup.sh` script provides several options:
 
-1. **"Invalid Firebase admin JSON file"**
-   - Ensure the JSON file contains all required fields
-   - Check that the file is not corrupted
+```bash
+# Show help
+./setup.sh --help
 
-2. **"Failed to initialize Firebase Admin SDK"**
-   - Verify your Firebase project is active
-   - Check that Authentication is enabled in Firebase Console
+# Only setup environment, don't run the app
+./setup.sh --setup-only
 
-3. **"No users found"**
-   - Ensure users exist in your Firebase Authentication
-   - Check Firebase project permissions
+# Skip setup and run the app directly (if already set up)
+./setup.sh --run-only
 
-### Getting Help
+# Force recreate virtual environment
+./setup.sh --recreate-venv
+```
 
-If you encounter issues:
-1. Check your Firebase admin JSON file format
-2. Verify Firebase project settings
-3. Ensure all dependencies are installed correctly
+### Troubleshooting Setup Issues
+
+**Externally-managed-environment Error:**
+- ✅ **Fixed automatically** by the setup script using virtual environments
+- The script creates an isolated Python environment to avoid system conflicts
+
+**Missing Dependencies:**
+- ✅ **Handled automatically** by the setup script
+- All required packages are installed in the virtual environment
+
+**Firebase Configuration:**
+- ✅ **Guided setup** - the script will prompt you for your Firebase admin key
+- ✅ **Validation** - checks that your key file is valid JSON with required fields
 
 ## Git Setup
 
