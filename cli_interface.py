@@ -133,70 +133,174 @@ class FirebaseAdminCLI:
         )
         self.console.print(copy_panel)
     
+    def show_password_strength(self, password: str):
+        """Show password strength with visual indicators."""
+        length = len(password)
+        has_upper = any(c.isupper() for c in password)
+        has_lower = any(c.islower() for c in password)
+        has_digit = any(c.isdigit() for c in password)
+        has_special = any(c in "!@#$%^&*()_+-=[]{}|;:,.<>?" for c in password)
+        
+        strength_score = 0
+        if length >= 8:
+            strength_score += 1
+        if length >= 12:
+            strength_score += 1
+        if has_upper:
+            strength_score += 1
+        if has_lower:
+            strength_score += 1
+        if has_digit:
+            strength_score += 1
+        if has_special:
+            strength_score += 1
+        
+        # Create strength bar
+        strength_bar = ""
+        colors = ["red", "yellow", "green"]
+        strength_levels = ["Weak", "Medium", "Strong"]
+        
+        for i in range(3):
+            if i < strength_score // 2:
+                strength_bar += f"[{colors[min(i, 2)]}]●[/{colors[min(i, 2)]}]"
+            else:
+                strength_bar += "[dim]○[/dim]"
+        
+        strength_text = strength_levels[min(strength_score // 2, 2)]
+        strength_color = colors[min(strength_score // 2, 2)]
+        
+        strength_panel = Panel(
+            f"""
+[bold {strength_color}]Password Strength: {strength_text}[/bold {strength_color}]
+{strength_bar}
+
+[dim]Length: {length} characters[/dim]
+[dim]Uppercase: {'✅' if has_upper else '❌'} Lowercase: {'✅' if has_lower else '❌'}[/dim]
+[dim]Numbers: {'✅' if has_digit else '❌'} Special chars: {'✅' if has_special else '❌'}[/dim]
+            """,
+            title="Password Analysis",
+            box=box.ROUNDED,
+            style=strength_color
+        )
+        self.console.print(strength_panel)
+
     def update_user_password(self):
-        """Update user password."""
-        uid = Prompt.ask("\n[cyan]Enter user UID")
-        
-        # Find user
-        user = None
-        for u in self.users:
-            if u['uid'] == uid:
-                user = u
-                break
-        
-        if not user:
-            self.console.print("[red]❌ User not found![/red]")
-            return
-        
-        self.show_user_details(user)
-        
-        if not Confirm.ask("\n[yellow]Do you want to update this user's password?"):
-            return
-        
-        new_password = Prompt.ask("[cyan]Enter new password", password=True)
-        confirm_password = Prompt.ask("[cyan]Confirm new password", password=True)
-        
-        if new_password != confirm_password:
-            self.console.print("[red]❌ Passwords don't match![/red]")
-            return
-        
-        if self.firebase_service.update_user_password(uid, new_password):
-            self.console.print("[green]✅ Password updated successfully![/green]")
-        else:
-            self.console.print("[red]❌ Failed to update password![/red]")
+        """Update user password with retry logic and back option."""
+        while True:
+            uid = Prompt.ask("\n[cyan]Enter user UID (or 'back' to return to menu)")
+            
+            if uid.lower() == 'back':
+                return
+            
+            # Find user
+            user = None
+            for u in self.users:
+                if u['uid'] == uid:
+                    user = u
+                    break
+            
+            if not user:
+                self.console.print("[red]❌ User not found![/red]")
+                continue
+            
+            self.clear_screen()
+            self.display_header()
+            self.show_user_details(user)
+            
+            if not Confirm.ask("\n[yellow]Do you want to update this user's password?"):
+                return
+            
+            # Password input with retry logic
+            while True:
+                self.console.print("\n[bold cyan]Password Requirements:[/bold cyan]")
+                self.console.print("[dim]• At least 8 characters long[/dim]")
+                self.console.print("[dim]• Mix of uppercase, lowercase, numbers, and special characters[/dim]")
+                self.console.print("[dim]• Type 'back' at any time to return to menu[/dim]")
+                
+                new_password = Prompt.ask("\n[cyan]Enter new password", password=True)
+                
+                if new_password.lower() == 'back':
+                    return
+                
+                # Show password strength
+                self.show_password_strength(new_password)
+                
+                confirm_password = Prompt.ask("[cyan]Confirm new password", password=True)
+                
+                if confirm_password.lower() == 'back':
+                    return
+                
+                if new_password != confirm_password:
+                    self.console.print("[red]❌ Passwords don't match! Please try again.[/red]")
+                    if not Confirm.ask("[yellow]Do you want to try again?"):
+                        return
+                    continue
+                
+                # Password validation
+                if len(new_password) < 8:
+                    self.console.print("[red]❌ Password must be at least 8 characters long![/red]")
+                    if not Confirm.ask("[yellow]Do you want to try again?"):
+                        return
+                    continue
+                
+                # Attempt to update password
+                if self.firebase_service.update_user_password(uid, new_password):
+                    self.console.print("[green]✅ Password updated successfully![/green]")
+                    return
+                else:
+                    self.console.print("[red]❌ Failed to update password![/red]")
+                    if not Confirm.ask("[yellow]Do you want to try again?"):
+                        return
+                    continue
     
     def update_user_name(self):
-        """Update user display name."""
-        uid = Prompt.ask("\n[cyan]Enter user UID")
-        
-        # Find user
-        user = None
-        for u in self.users:
-            if u['uid'] == uid:
-                user = u
-                break
-        
-        if not user:
-            self.console.print("[red]❌ User not found![/red]")
-            return
-        
-        self.show_user_details(user)
-        
-        if not Confirm.ask("\n[yellow]Do you want to update this user's display name?"):
-            return
-        
-        new_name = Prompt.ask("[cyan]Enter new display name")
-        
-        if self.firebase_service.update_user_display_name(uid, new_name):
-            self.console.print("[green]✅ Display name updated successfully![/green]")
-            # Refresh users to get updated data
-            self.load_users()
-        else:
-            self.console.print("[red]❌ Failed to update display name![/red]")
+        """Update user display name with back option."""
+        while True:
+            uid = Prompt.ask("\n[cyan]Enter user UID (or 'back' to return to menu)")
+            
+            if uid.lower() == 'back':
+                return
+            
+            # Find user
+            user = None
+            for u in self.users:
+                if u['uid'] == uid:
+                    user = u
+                    break
+            
+            if not user:
+                self.console.print("[red]❌ User not found![/red]")
+                continue
+            
+            self.clear_screen()
+            self.display_header()
+            self.show_user_details(user)
+            
+            if not Confirm.ask("\n[yellow]Do you want to update this user's display name?"):
+                return
+            
+            new_name = Prompt.ask("[cyan]Enter new display name (or 'back' to return)")
+            
+            if new_name.lower() == 'back':
+                return
+            
+            if self.firebase_service.update_user_display_name(uid, new_name):
+                self.console.print("[green]✅ Display name updated successfully![/green]")
+                # Refresh users to get updated data
+                self.load_users()
+                return
+            else:
+                self.console.print("[red]❌ Failed to update display name![/red]")
+                if not Confirm.ask("[yellow]Do you want to try again?"):
+                    return
+                continue
     
     def view_user_details(self):
         """View detailed information about a specific user."""
-        uid = Prompt.ask("\n[cyan]Enter user UID")
+        uid = Prompt.ask("\n[cyan]Enter user UID (or 'back' to return to menu)")
+        
+        if uid.lower() == 'back':
+            return
         
         # Find user
         user = None
@@ -215,6 +319,19 @@ class FirebaseAdminCLI:
     
     def show_main_menu(self):
         """Display the main menu."""
+        # Show helpful shortcuts
+        shortcuts_panel = Panel(
+            """
+[bold yellow]💡 Quick Tips:[/bold yellow]
+[dim]• Type 'back' at any prompt to return to this menu[/dim]
+[dim]• UIDs are displayed in full - select and copy them directly[/dim]
+[dim]• Password updates include strength analysis and retry logic[/dim]
+            """,
+            box=box.ROUNDED,
+            style="blue"
+        )
+        self.console.print(shortcuts_panel)
+        
         menu_panel = Panel(
             """
 [bold cyan]1.[/bold cyan] 🔍 Search Users
