@@ -103,7 +103,7 @@ python app.py ./firebase-admin-key.json
 3. **👁️ View User Details** - View detailed user info with full UID display
 4. **🔑 Update User Password** - Reset a user's password
 5. **👤 Update User Display Name** - Change a user's display name
-6. **🧪 Test User Login** - Test authentication and get access token
+6. **🧪 Generate Tokens** - Generate custom tokens or test login
 7. **📋 Show All Users** - Display all users in a table
 8. **❌ Exit** - Close the application
 
@@ -114,13 +114,14 @@ python app.py ./firebase-admin-key.json
 - **Copy Instructions**: Detailed view includes copy instructions
 - **Table Selection**: You can select and copy UIDs directly from the user table
 
-### Authentication Testing
+### Token Generation Features
 
-- **Login Testing**: Test user authentication with email and password
-- **Token Generation**: Get Firebase ID tokens for API authentication
-- **Token Display**: View and copy authentication tokens
-- **Error Handling**: Clear error messages for failed authentication attempts
-- **API Key Support**: Uses Firebase Web API key for authentication testing
+- **Custom Token Generation**: Generate Firebase custom tokens using Admin SDK (no API key needed)
+- **Password Login Testing**: Test user authentication with email/password (requires Web API key)
+- **Token Display**: View and copy both custom tokens and ID tokens
+- **Multiple Methods**: Choose between Admin SDK or REST API approaches
+- **Error Handling**: Clear error messages for failed token generation
+- **User Verification**: Shows user details before token generation
 
 ### Example Workflow
 

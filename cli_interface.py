@@ -320,8 +320,133 @@ class FirebaseAdminCLI:
     def test_user_login(self):
         """Test user login and display authentication token."""
         while True:
-            self.console.print("\n[bold cyan]Login Test[/bold cyan]")
-            self.console.print("[dim]Test user authentication and get access token[/dim]")
+            self.console.print("\n[bold cyan]Token Generation[/bold cyan]")
+            self.console.print("[dim]Generate authentication tokens for users[/dim]")
+            self.console.print("[dim]Type 'back' at any time to return to menu[/dim]")
+            
+            # Show options
+            options_panel = Panel(
+                """
+[bold cyan]Choose token generation method:[/bold cyan]
+
+[bold green]1.[/bold green] 🔑 Generate Custom Token (Admin SDK - No API key needed)
+[bold green]2.[/bold green] 🧪 Test Login with Password (Requires Web API key)
+[bold green]3.[/bold green] 🔙 Back to menu
+                """,
+                title="Token Generation Options",
+                box=box.ROUNDED,
+                style="blue"
+            )
+            self.console.print(options_panel)
+            
+            method = Prompt.ask(
+                "\n[cyan]Select method",
+                choices=["1", "2", "3"],
+                default="1"
+            )
+            
+            if method == "3" or method.lower() == 'back':
+                return
+            
+            if method == "1":
+                self.generate_custom_token()
+            elif method == "2":
+                self.test_password_login()
+    
+    def generate_custom_token(self):
+        """Generate custom token using Firebase Admin SDK."""
+        while True:
+            uid = Prompt.ask("\n[cyan]Enter user UID (or 'back' to return)")
+            if uid.lower() == 'back':
+                return
+            
+            # Find user to show details
+            user = None
+            for u in self.users:
+                if u['uid'] == uid:
+                    user = u
+                    break
+            
+            if not user:
+                self.console.print("[red]❌ User not found![/red]")
+                continue
+            
+            self.clear_screen()
+            self.display_header()
+            self.show_user_details(user)
+            
+            if not Confirm.ask("\n[yellow]Do you want to generate a custom token for this user?"):
+                return
+            
+            # Generate custom token
+            success, custom_token, error = self.firebase_service.test_user_login_with_admin_sdk(uid)
+            
+            if success and custom_token:
+                # Display successful token generation
+                success_panel = Panel(
+                    f"""
+[bold green]✅ Custom Token Generated![/bold green]
+
+[bold cyan]User UID:[/bold cyan] {uid}
+[bold cyan]Email:[/bold cyan] {user['email']}
+[bold green]Status:[/bold green] Token Generated
+[bold blue]Method:[/bold blue] Firebase Admin SDK
+                    """,
+                    title="Token Generation Results",
+                    box=box.DOUBLE,
+                    style="green"
+                )
+                self.console.print(success_panel)
+                
+                # Display token with copy instructions
+                token_panel = Panel(
+                    f"""
+[bold yellow]🔑 Custom Token:[/bold yellow]
+[bold cyan]{custom_token}[/bold cyan]
+
+[bold yellow]📋 To copy the token:[/bold yellow]
+[dim]Select the token text above and copy it (Cmd+C on Mac, Ctrl+C on Windows/Linux)[/dim]
+
+[bold blue]Token Info:[/bold blue]
+[dim]• This is a Firebase Custom Token[/dim]
+[dim]• Can be exchanged for ID token on client side[/dim]
+[dim]• Valid for 1 hour by default[/dim]
+[dim]• Use for server-side authentication[/dim]
+                    """,
+                    title="Custom Token",
+                    box=box.ROUNDED,
+                    style="yellow"
+                )
+                self.console.print(token_panel)
+                
+            else:
+                # Display error
+                error_panel = Panel(
+                    f"""
+[bold red]❌ Token Generation Failed[/bold red]
+
+[bold cyan]User UID:[/bold cyan] {uid}
+[bold red]Error:[/bold red] {error}
+
+[bold yellow]Common Issues:[/bold yellow]
+[dim]• User account disabled[/dim]
+[dim]• Invalid user UID[/dim]
+[dim]• Firebase Admin SDK configuration issues[/dim]
+                    """,
+                    title="Token Generation Results",
+                    box=box.DOUBLE,
+                    style="red"
+                )
+                self.console.print(error_panel)
+            
+            if not Confirm.ask("\n[yellow]Do you want to generate another token?"):
+                return
+    
+    def test_password_login(self):
+        """Test user login with password (requires API key)."""
+        while True:
+            self.console.print("\n[bold cyan]Password Login Test[/bold cyan]")
+            self.console.print("[dim]Test user authentication with email/password[/dim]")
             self.console.print("[dim]Type 'back' at any time to return to menu[/dim]")
             
             email = Prompt.ask("\n[cyan]Enter user email")
@@ -333,20 +458,15 @@ class FirebaseAdminCLI:
                 return
             
             # Ask for Firebase Web API key
-            self.console.print("\n[yellow]Note: You need your Firebase Web API key for authentication testing.[/yellow]")
+            self.console.print("\n[yellow]Note: You need your Firebase Web API key for password testing.[/yellow]")
             self.console.print("[dim]Get it from: Firebase Console > Project Settings > General > Web API Key[/dim]")
             
-            api_key = Prompt.ask("[cyan]Enter Firebase Web API key (or 'skip' to try without)")
+            api_key = Prompt.ask("[cyan]Enter Firebase Web API key (or 'back' to return)")
             if api_key.lower() == 'back':
                 return
             
-            if api_key.lower() == 'skip':
-                self.console.print("[yellow]⚠️ Testing without API key may not work. Using admin SDK method...[/yellow]")
-                # Try with admin SDK (limited functionality)
-                success, token, error = False, None, "API key required for login testing"
-            else:
-                # Test login with API key
-                success, token, error = self.firebase_service.test_login_with_api_key(email, password, api_key)
+            # Test login with API key
+            success, token, error = self.firebase_service.test_login_with_api_key(email, password, api_key)
             
             self.clear_screen()
             self.display_header()
@@ -360,6 +480,7 @@ class FirebaseAdminCLI:
 [bold cyan]Email:[/bold cyan] {email}
 [bold green]Status:[/bold green] Authenticated
 [bold blue]Token Generated:[/bold cyan] Yes
+[bold blue]Method:[/bold blue] Password Authentication
                     """,
                     title="Login Test Results",
                     box=box.DOUBLE,
@@ -370,7 +491,7 @@ class FirebaseAdminCLI:
                 # Display token with copy instructions
                 token_panel = Panel(
                     f"""
-[bold yellow]🔑 Access Token:[/bold yellow]
+[bold yellow]🔑 ID Token:[/bold yellow]
 [bold cyan]{token}[/bold cyan]
 
 [bold yellow]📋 To copy the token:[/bold yellow]
@@ -433,7 +554,7 @@ class FirebaseAdminCLI:
 [bold cyan]3.[/bold cyan] 👁️  View User Details (with full UID)
 [bold cyan]4.[/bold cyan] 🔑 Update User Password
 [bold cyan]5.[/bold cyan] 👤 Update User Display Name
-[bold cyan]6.[/bold cyan] 🧪 Test User Login (get token)
+[bold cyan]6.[/bold cyan] 🧪 Generate Tokens (custom & login test)
 [bold cyan]7.[/bold cyan] 📋 Show All Users
 [bold cyan]8.[/bold cyan] ❌ Exit
             """,

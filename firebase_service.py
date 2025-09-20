@@ -141,16 +141,34 @@ class FirebaseUserService:
             print(f"Error getting user: {str(e)}")
             return None
     
-    def test_user_login(self, email: str, password: str) -> Tuple[bool, Optional[str], Optional[str]]:
+    def generate_custom_token(self, uid: str, additional_claims: Optional[Dict] = None) -> Tuple[bool, Optional[str], Optional[str]]:
         """
-        Test user login and get authentication token.
+        Generate a custom token for a user using Firebase Admin SDK.
         
         Args:
-            email: User email
-            password: User password
+            uid: User UID
+            additional_claims: Optional additional claims for the token
             
         Returns:
             Tuple of (success, token, error_message)
+        """
+        try:
+            # Generate custom token using Firebase Admin SDK
+            custom_token = auth.create_custom_token(uid, additional_claims)
+            token_string = custom_token.decode('utf-8')
+            return True, token_string, None
+        except Exception as e:
+            return False, None, f"Failed to generate custom token: {str(e)}"
+    
+    def exchange_custom_token_for_id_token(self, custom_token: str) -> Tuple[bool, Optional[str], Optional[str]]:
+        """
+        Exchange custom token for ID token using Firebase Auth REST API.
+        
+        Args:
+            custom_token: Custom token string
+            
+        Returns:
+            Tuple of (success, id_token, error_message)
         """
         try:
             # Get Firebase project configuration
@@ -158,13 +176,12 @@ class FirebaseUserService:
             if not project_id:
                 return False, None, "Could not determine Firebase project ID"
             
-            # Firebase Auth REST API endpoint
-            auth_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={self._get_api_key()}"
+            # Firebase Auth REST API endpoint for token exchange
+            auth_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={self._get_api_key()}"
             
             # Prepare request data
             data = {
-                "email": email,
-                "password": password,
+                "token": custom_token,
                 "returnSecureToken": True
             }
             
@@ -173,15 +190,41 @@ class FirebaseUserService:
             
             if response.status_code == 200:
                 result = response.json()
-                token = result.get('idToken')
-                return True, token, None
+                id_token = result.get('idToken')
+                return True, id_token, None
             else:
                 error_data = response.json()
                 error_message = error_data.get('error', {}).get('message', 'Unknown error')
                 return False, None, error_message
                 
         except Exception as e:
-            return False, None, f"Login test failed: {str(e)}"
+            return False, None, f"Token exchange failed: {str(e)}"
+    
+    def test_user_login_with_admin_sdk(self, uid: str) -> Tuple[bool, Optional[str], Optional[str]]:
+        """
+        Test user authentication using Firebase Admin SDK (no API key required).
+        
+        Args:
+            uid: User UID
+            
+        Returns:
+            Tuple of (success, custom_token, error_message)
+        """
+        try:
+            # First, verify the user exists
+            user = auth.get_user(uid)
+            if not user:
+                return False, None, "User not found"
+            
+            # Generate custom token
+            success, custom_token, error = self.generate_custom_token(uid)
+            if not success:
+                return False, None, error
+            
+            return True, custom_token, None
+                
+        except Exception as e:
+            return False, None, f"Admin SDK login test failed: {str(e)}"
     
     def _get_project_id(self) -> Optional[str]:
         """Get Firebase project ID from admin credentials."""
