@@ -2,6 +2,8 @@
 
 A beautiful CLI application for managing Firebase users with a modern terminal interface.
 
+![Firebase Admin Console Screenshot](assets/screenshot_3x_postspark_2025-09-20_21-58-18.png)
+
 ## Features
 
 - 🔍 **Search Users**: Search by name or email
