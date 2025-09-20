@@ -317,6 +317,100 @@ class FirebaseAdminCLI:
         self.display_header()
         self.show_user_details(user)
     
+    def test_user_login(self):
+        """Test user login and display authentication token."""
+        while True:
+            self.console.print("\n[bold cyan]Login Test[/bold cyan]")
+            self.console.print("[dim]Test user authentication and get access token[/dim]")
+            self.console.print("[dim]Type 'back' at any time to return to menu[/dim]")
+            
+            email = Prompt.ask("\n[cyan]Enter user email")
+            if email.lower() == 'back':
+                return
+            
+            password = Prompt.ask("[cyan]Enter user password", password=True)
+            if password.lower() == 'back':
+                return
+            
+            # Ask for Firebase Web API key
+            self.console.print("\n[yellow]Note: You need your Firebase Web API key for authentication testing.[/yellow]")
+            self.console.print("[dim]Get it from: Firebase Console > Project Settings > General > Web API Key[/dim]")
+            
+            api_key = Prompt.ask("[cyan]Enter Firebase Web API key (or 'skip' to try without)")
+            if api_key.lower() == 'back':
+                return
+            
+            if api_key.lower() == 'skip':
+                self.console.print("[yellow]⚠️ Testing without API key may not work. Using admin SDK method...[/yellow]")
+                # Try with admin SDK (limited functionality)
+                success, token, error = False, None, "API key required for login testing"
+            else:
+                # Test login with API key
+                success, token, error = self.firebase_service.test_login_with_api_key(email, password, api_key)
+            
+            self.clear_screen()
+            self.display_header()
+            
+            if success and token:
+                # Display successful login with token
+                success_panel = Panel(
+                    f"""
+[bold green]✅ Login Successful![/bold green]
+
+[bold cyan]Email:[/bold cyan] {email}
+[bold green]Status:[/bold green] Authenticated
+[bold blue]Token Generated:[/bold cyan] Yes
+                    """,
+                    title="Login Test Results",
+                    box=box.DOUBLE,
+                    style="green"
+                )
+                self.console.print(success_panel)
+                
+                # Display token with copy instructions
+                token_panel = Panel(
+                    f"""
+[bold yellow]🔑 Access Token:[/bold yellow]
+[bold cyan]{token}[/bold cyan]
+
+[bold yellow]📋 To copy the token:[/bold yellow]
+[dim]Select the token text above and copy it (Cmd+C on Mac, Ctrl+C on Windows/Linux)[/dim]
+
+[bold blue]Token Info:[/bold blue]
+[dim]• This is a Firebase ID token[/dim]
+[dim]• Valid for 1 hour by default[/dim]
+[dim]• Use for API authentication[/dim]
+                    """,
+                    title="Authentication Token",
+                    box=box.ROUNDED,
+                    style="yellow"
+                )
+                self.console.print(token_panel)
+                
+            else:
+                # Display error
+                error_panel = Panel(
+                    f"""
+[bold red]❌ Login Failed[/bold red]
+
+[bold cyan]Email:[/bold cyan] {email}
+[bold red]Error:[/bold red] {error}
+
+[bold yellow]Common Issues:[/bold yellow]
+[dim]• Invalid email or password[/dim]
+[dim]• User account disabled[/dim]
+[dim]• Incorrect Firebase Web API key[/dim]
+[dim]• Network connectivity issues[/dim]
+                    """,
+                    title="Login Test Results",
+                    box=box.DOUBLE,
+                    style="red"
+                )
+                self.console.print(error_panel)
+            
+            if not Confirm.ask("\n[yellow]Do you want to test another login?"):
+                return
+    
     def show_main_menu(self):
         """Display the main menu."""
         # Show helpful shortcuts
@@ -339,8 +433,9 @@ class FirebaseAdminCLI:
 [bold cyan]3.[/bold cyan] 👁️  View User Details (with full UID)
 [bold cyan]4.[/bold cyan] 🔑 Update User Password
 [bold cyan]5.[/bold cyan] 👤 Update User Display Name
-[bold cyan]6.[/bold cyan] 📋 Show All Users
-[bold cyan]7.[/bold cyan] ❌ Exit
+[bold cyan]6.[/bold cyan] 🧪 Test User Login (get token)
+[bold cyan]7.[/bold cyan] 📋 Show All Users
+[bold cyan]8.[/bold cyan] ❌ Exit
             """,
             title="Main Menu",
             box=box.ROUNDED,
@@ -367,7 +462,7 @@ class FirebaseAdminCLI:
             
             choice = Prompt.ask(
                 "\n[bold cyan]Select an option",
-                choices=["1", "2", "3", "4", "5", "6", "7"],
+                choices=["1", "2", "3", "4", "5", "6", "7", "8"],
                 default="1"
             )
             
@@ -382,13 +477,15 @@ class FirebaseAdminCLI:
             elif choice == "5":
                 self.update_user_name()
             elif choice == "6":
+                self.test_user_login()
+            elif choice == "7":
                 self.filtered_users = self.users.copy()
                 self.clear_screen()
                 self.display_header()
                 self.display_users_table(self.filtered_users)
-            elif choice == "7":
+            elif choice == "8":
                 self.console.print("\n[green]👋 Goodbye![/green]")
                 break
             
-            if choice != "7":
+            if choice != "8":
                 Prompt.ask("\n[dim]Press Enter to continue...[/dim]")

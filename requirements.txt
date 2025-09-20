@@ -2,3 +2,4 @@ firebase-admin==6.4.0
 rich==13.7.0
 click==8.1.7
 colorama==0.4.6
+requests==2.32.3
